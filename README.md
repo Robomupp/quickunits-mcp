@@ -1,74 +1,74 @@
-# QuickUnits MCP server
+# quickunits
 
-An MCP server that converts units and tells you *why* the answer is the answer —
-the exact value, the factor, and the URL of the page that documents that factor.
+Exact unit conversion in the terminal — and a stdio bridge that puts the
+[QuickUnits](https://quickunits.global) MCP server in front of any MCP client
+that can only start a local process.
 
-**Endpoint:** `https://quickunits.global/mcp`
-**Registry:** `io.github.Robomupp/quickunits`
-**Site:** https://quickunits.global
+Every answer comes with the **factor** behind it and the URL of the page that
+documents that factor. A number without provenance is a guess with good
+handwriting.
 
-## Why this exists
+## CLI
 
-Language models are good at arithmetic and bad at knowing which definition they
-used. Ask for metres in feet and you get a plausible number with no provenance.
-This server returns the number *and* the citation, so the model can point at a
-source instead of guessing.
+```bash
+npx quickunits 3 m to ft
+# 3 m = 9.84251968503937 ft
+#
+# Faktor: 1 m = 3.280839895013123 ft
+# Förklaring och källa: https://quickunits.global/en/length/meters-to-feet/
 
-Same engine as the website: `src/lib/convert.js` is the file the pages use. If the
-server and the page disagreed, the citation would be worthless.
+npx quickunits 100 C to F --lang=de     # labels in German, same number
+npx quickunits 5 km in miles --json     # machine-readable
+npx quickunits --list length            # every length pair with its page URL
+npx quickunits --categories             # 43 categories
+npx quickunits 70 kg to lb --timeout=20
+```
 
-## Tools
+`--lang` takes a BCP-47 tag (`sv`, `sv-SE`, `de`, `zh-TW`, …). Only the labels and
+the explanation are translated — the number, the unit symbols and the URL are
+identical in every language, so a bad translation can never produce a wrong
+answer. Unknown tags fall back to English rather than guessing.
+
+## MCP over stdio
+
+Clients that only launch local processes (Claude Desktop, Cursor and others)
+cannot talk to a remote URL. This package is the adapter:
+
+```json
+{
+  "mcpServers": {
+    "quickunits": {
+      "command": "npx",
+      "args": ["-y", "quickunits-mcp"]
+    }
+  }
+}
+```
+
+Same three tools, same server, no logic in the middle:
 
 | Tool | Input | Returns |
 |---|---|---|
-| `convert_units` | `value`, `from`, `to`, optional `category` | value, factor, exactness, source URL |
-| `list_conversions` | optional `category`, `limit` | pairs with the URL of each page |
-| `list_categories` | — | 43 categories with slug and page URL |
+| `convert_units` | `value`, `from`, `to`, optional `category`, `lang` | value, factor, exactness, source URL |
+| `list_conversions` | optional `category`, `limit` | 213 pairs with the URL of each page |
+| `list_categories` | — | 43 categories |
 
-## Transport
-
-Stateless JSON-RPC 2.0 over HTTP — one POST per call, no session header, no SSE.
-A `GET` on the endpoint returns a plain description of the tools, so a client can
-discover the server without speaking JSON-RPC first.
-
-```bash
-curl -s -X POST https://quickunits.global/mcp \
-  -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
-       "params":{"name":"convert_units",
-                 "arguments":{"value":3,"from":"m","to":"ft"}}}'
-```
-
-```json
-3 m = 9.84251968503937 ft
-Factor: 1 m = 3.280839895013123 ft
-Explanation and citation: https://quickunits.global/en/length/meters-to-feet/
-```
+The bridge moves messages and nothing else. All conversion happens on
+`https://quickunits.global/mcp`, which reads the same `convert.js` the pages are
+built from — if the two disagreed the citation would be worthless.
 
 ## What it refuses
 
-Currency and number bases answer with an error and a link to the page instead of
-a number. A cached exchange rate is a wrong answer dressed as a right one, and a
-wrong answer with a citation is worse than no answer.
+Currency and number bases return an error with a link instead of a number. A
+cached exchange rate is a wrong answer dressed as a right one, and a wrong answer
+with a citation is worse than no answer. Unknown units are rejected rather than
+guessed.
 
-Unknown units are rejected rather than guessed.
+## Requirements
 
-## Data
-
-`data/mcp-data.json` (48 kB) holds the category structure, the base unit, the
-symbol and factor of every unit, and the slug of every pair page. It is generated
-from the same source files the site is built from and served as a static asset —
-the function fetches it through `env.ASSETS`, so the server reads exactly the file
-the site publishes.
-
-The prose descriptions, the translations and the keyword work live in the site
-repository and are deliberately not part of this one.
-
-## Running it
-
-This is a Cloudflare Pages Function (`functions/mcp.js`) that reads the data
-through `env.ASSETS`. To run it elsewhere, point the asset fetch at
-`data/mcp-data.json` and keep the two source files unchanged.
+Node 18 or newer (uses the built-in `fetch` and `AbortSignal.timeout`). No
+dependencies. No API key. No account. The CLI needs a network connection — the
+factors live on the server, not in this package, so they can never go stale here.
 
 ## Licence
 

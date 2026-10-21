@@ -1,11 +1,39 @@
 {
-  "name": "quickunits-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for QuickUnits: exact unit conversion with the factor and a citable page URL.",
+  "name": "quickunits",
+  "version": "1.1.0",
+  "description": "Exact unit conversion with the factor and a citable source page. CLI and stdio bridge for the QuickUnits MCP server.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://quickunits.global/mcp",
-  "repository": { "type": "git", "url": "https://github.com/Robomupp/quickunits-mcp" },
-  "main": "functions/mcp.js",
-  "files": ["functions/", "src/", "data/"]
+  "homepage": "https://quickunits.global",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Robomupp/quickunits-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Robomupp/quickunits-mcp/issues"
+  },
+  "bin": {
+    "quickunits": "bin/quickunits.js",
+    "quickunits-mcp": "bin/mcp-stdio.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "unit-conversion",
+    "units",
+    "converter",
+    "mcp",
+    "model-context-protocol",
+    "cli"
+  ]
 }
