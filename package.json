@@ -1,0 +1,11 @@
+{
+  "name": "quickunits-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for QuickUnits: exact unit conversion with the factor and a citable page URL.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://quickunits.global/mcp",
+  "repository": { "type": "git", "url": "https://github.com/Robomupp/quickunits-mcp" },
+  "main": "functions/mcp.js",
+  "files": ["functions/", "src/", "data/"]
+}
