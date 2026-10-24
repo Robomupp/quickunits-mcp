@@ -1,5 +1,7 @@
 # quickunits
 
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/robomupp/quickunits-mcp)
+
 Exact unit conversion in the terminal — and a stdio bridge that puts the
 [QuickUnits](https://quickunits.global) MCP server in front of any MCP client
 that can only start a local process.
