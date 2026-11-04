@@ -17,6 +17,11 @@ on:
   release:
     types: [published]   # publiceras när en GitHub-release skapas
   workflow_dispatch:       # och manuellt från Actions-fliken
+    inputs:
+      rensa_disttag:
+        description: 'Ta bort kvarlämnad dist-tagg token-verify (publicerar inget)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -43,7 +48,15 @@ jobs:
       - name: Tester
         run: npm test
 
+      # Städning: en äldre token-verifiering lämnade dist-taggen token-verify
+      # efter sig. Token som kringgår 2FA får inte radera dist-taggar (403),
+      # men en OIDC-anslutning med dist-tag-behörighet gör det.
+      - name: Ta bort kvarlämnad dist-tagg
+        if: inputs.rensa_disttag == true
+        run: npm dist-tag ls quickunits && npm dist-tag rm quickunits token-verify
+
       # Ingen NODE_AUTH_TOKEN: autentiseringen sker via id-token (OIDC).
       # --provenance lägger ett signerat ursprungsbevis i paketet.
       - name: Publicera
+        if: inputs.rensa_disttag != true
         run: npm publish --provenance --access public
