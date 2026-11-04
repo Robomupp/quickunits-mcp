@@ -1,6 +1,6 @@
 {
   "name": "quickunits",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Exact unit conversion with the factor and a citable source page. CLI and stdio bridge for the QuickUnits MCP server.",
   "type": "module",
   "license": "MIT",
