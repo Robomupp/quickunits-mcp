@@ -50,10 +50,11 @@ jobs:
 
       # Städning: en äldre token-verifiering lämnade dist-taggen token-verify
       # efter sig. Token som kringgår 2FA får inte radera dist-taggar (403),
-      # men en OIDC-anslutning med dist-tag-behörighet gör det.
+      # men en OIDC-anslutning med dist-tag-behörighet gör det. Körs därför
+      # alltid innan publicering — den är ofarlig när taggen redan är borta.
       - name: Ta bort kvarlämnad dist-tagg
-        if: inputs.rensa_disttag == true
-        run: npm dist-tag ls quickunits && npm dist-tag rm quickunits token-verify
+        continue-on-error: true
+        run: npm dist-tag ls quickunits; npm dist-tag rm quickunits token-verify || true
 
       # Ingen NODE_AUTH_TOKEN: autentiseringen sker via id-token (OIDC).
       # --provenance lägger ett signerat ursprungsbevis i paketet.
