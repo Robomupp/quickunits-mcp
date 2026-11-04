@@ -1,0 +1,49 @@
+name: publish
+
+# Publicering utan npm-token: GitHub bevisar sin identitet mot npm med OIDC,
+# och npm kontrollerar att repository + workflow-fil stämmer med den
+# "Trusted Publisher" som är registrerad på paketet. Inga hemligheter lagras.
+#
+# npm håller på att stänga av tokens som kringgår 2FA (2026-10-27), så den här
+# vägen är den som håller: inget lösenord, ingen token som kan gå ut.
+#
+# Krav på npmjs.com (engångsinställning av kontoinnehavaren):
+#   npmjs.com → paketet quickunits → Settings → Trusted Publishing
+#   → Repository: Robomupp/quickunits-mcp
+#   → Workflow filename: publish.yml
+#   → Environment: (lämnas tomt)
+
+on:
+  release:
+    types: [published]   # publiceras när en GitHub-release skapas
+  workflow_dispatch:       # och manuellt från Actions-fliken
+
+permissions:
+  contents: read
+  id-token: write          # krävs för OIDC — detta är behörigheten npm läser
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      # OIDC-stöd i npm kräver npm >= 11.5.1; Actions-bildens npm är äldre.
+      - name: Uppgradera npm
+        run: npm install -g npm@latest && npm --version
+
+      - name: Installation
+        run: npm ci || npm install
+
+      - name: Tester
+        run: npm test
+
+      # Ingen NODE_AUTH_TOKEN: autentiseringen sker via id-token (OIDC).
+      # --provenance lägger ett signerat ursprungsbevis i paketet.
+      - name: Publicera
+        run: npm publish --provenance --access public
