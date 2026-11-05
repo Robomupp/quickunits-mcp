@@ -56,8 +56,24 @@ jobs:
         continue-on-error: true
         run: npm dist-tag ls quickunits; npm dist-tag rm quickunits token-verify || true
 
+      # Skydd mot falska röda körningar: npm vägrar skriva över en version som
+      # redan finns (E403 "cannot publish over"). Ett manuellt workflow_dispatch
+      # på en redan publicerad commit gav tidigare ett "Run failed"-mail utan att
+      # något faktiskt var fel. Vi kollar registret först och hoppar över då.
+      - name: Kontrollera om versionen redan är publicerad
+        id: versionskoll
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if npm view "quickunits@$V" version >/dev/null 2>&1; then
+            echo "finns=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::quickunits@$V finns redan på npm — hoppar över publicering."
+          else
+            echo "finns=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Ingen NODE_AUTH_TOKEN: autentiseringen sker via id-token (OIDC).
       # --provenance lägger ett signerat ursprungsbevis i paketet.
       - name: Publicera
-        if: inputs.rensa_disttag != true
+        if: inputs.rensa_disttag != true && steps.versionskoll.outputs.finns == 'false'
         run: npm publish --provenance --access public
